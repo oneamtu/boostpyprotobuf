@@ -115,6 +115,14 @@ class TestBoostPyWrapping(unittest.TestCase):
         self.assertNotEqual(foo.bar.BabyBoo(), None)
         self.assertNotEqual(foo.bar.BabyBoo().add_sibling_message, None)
 
+    def test_tostring(self):
+        self.test_message.bytes_test = "bytes"
+        self.test_message.string_test = "string"
+        self.test_message.int32_test = 17
+        self.test_message.float_test = 0.009999999776482582
+        expected_output = 'string_test: "string"\nbytes_test: "bytes"\nint32_test: 17\nfloat_test: 0.01\n'
+        self.assertEqual(self.test_message.__str__(), expected_output)
+
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestBoostPyWrapping)
     unittest.TextTestRunner(verbosity=2).run(suite)

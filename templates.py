@@ -19,6 +19,7 @@ PACKAGE_SCOPE = "  scope %(scope_name)s_scope = class_<DummyClassFor%(scope_name
 # properly namespaced/scoped in python
 MESSAGE_SCOPE = "  {\n"
 MESSAGE_DECLARATION = "  scope the_scope = class_<%(scoped_message_name)s>(\"%(message_name)s\")\n"
+MESSAGE_TOSTRING = """ .def("__str__", &%(scoped_message_name)s::DebugString)\n"""
 MESSAGE_DECLARATION_END = "  ;\n\n"
 MESSAGE_SCOPE_END = "  }\n"
 
