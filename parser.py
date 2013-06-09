@@ -4,6 +4,9 @@ import protobuf_defs
 # allow underscores in names
 name_word = Word(alphanums + '_')
 
+path_element = Word(alphanums + '-_.')
+import_declaration = 'import "' + delimitedList(path_element).setResultsName('path') + '";'
+
 package_scopes = delimitedList(name_word, '.')
 package_declaration = 'package' + package_scopes.setResultsName('scopes') + ';'
 
@@ -53,7 +56,9 @@ message << message_keyword + message_name + '{' + nested_elements + '}'
 # messages in a proto_file are named elements so that top-level messages can
 # be processed just like nested messages (so they're nested under the global
 # namespace in some sense)
-proto_file = Optional(package_declaration).setResultsName('package') + ZeroOrMore(Group(message)).setResultsName('elements')
+proto_file = ZeroOrMore(Group(import_declaration)).setResultsName('imports') + \
+    Optional(package_declaration).setResultsName('package') + \
+    ZeroOrMore(Group(message)).setResultsName('elements')
 
 proto_file.ignore(dblSlashComment)
 

@@ -4,6 +4,7 @@ import unittest
 
 from test_proto import *
 from test_package_proto import *
+from test_import_proto import *
 
 class TestBoostPyWrapping(unittest.TestCase):
 
@@ -122,6 +123,11 @@ class TestBoostPyWrapping(unittest.TestCase):
         self.test_message.float_test = 0.009999999776482582
         expected_output = 'string_test: "string"\nbytes_test: "bytes"\nint32_test: 17\nfloat_test: 0.01\n'
         self.assertEqual(self.test_message.__str__(), expected_output)
+
+    def test_import(self):
+        test_import_message = TestImportMessage()
+        imported_message = test_import_message.imported_message
+        self.assertNotEqual(imported_message, None)
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestBoostPyWrapping)

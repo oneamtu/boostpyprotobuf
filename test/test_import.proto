@@ -1,0 +1,5 @@
+import "test.proto";
+
+message TestImportMessage {
+  required TestMessage imported_message = 1;
+}

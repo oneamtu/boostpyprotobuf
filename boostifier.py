@@ -114,7 +114,10 @@ def scoped_message_type(message, known_messages, scope_stack):
 
     found_message = scoped_message_type(message, unscoped_messages, scope_stack[1:])
 
-    if found_message is None and known_messages.has_key(message):
-        return message
+    if found_message is None:
+        if known_messages.has_key(message):
+            return message
+        else:
+            raise Exception("Unknown message %s" % message)
 
     return scope + '::' + found_message

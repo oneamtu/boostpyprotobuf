@@ -14,6 +14,20 @@ def boost_output_filename(name):
 def protoc_header_filename(name):
     return '.'.join([name] + ['pb', 'h'])
 
+def extract_message_hierarchy_with_package_scope(parsed_proto_file):
+    package_scopes = []
+
+    if parsed_proto_file.package != '':
+        package_scopes = list(parsed_proto_file.package.scopes)
+
+    unscoped_known_messages = extract_message_hierarchy(parsed_proto_file)
+    # pack the known_messages within the scopes defined by package
+    scoped_known_messages = unscoped_known_messages
+    for scope in reversed(package_scopes):
+        scoped_known_messages = {scope: scoped_known_messages}
+
+    return scoped_known_messages
+
 def extract_message_hierarchy(parsed_proto_message):
     """
     Go through all elements of an object, find elements of type message
@@ -67,6 +81,7 @@ def main(argv):
     for input_file_path in args:
 
         input_basename = basename_no_extension(input_file_path)
+        input_dir = os.path.dirname(input_file_path)
 
         output_file = os.path.join(output_dir, boost_output_filename(input_basename))
 
@@ -79,36 +94,38 @@ def main(argv):
 
         known_enums = []
         wrapped_messages = []
-        scopes = []
+        package_scopes = []
+
+        scoped_known_messages = extract_message_hierarchy_with_package_scope(parsed_proto_file)
+        for imported_proto in parsed_proto_file.imports:
+            imported_proto_file_path = os.path.join(input_dir, *imported_proto.path)
+            parsed_imported_proto_file = parser.parse_proto_file(imported_proto_file_path)
+            parsed_imported_proto_scoped_known_messages = extract_message_hierarchy_with_package_scope(parsed_imported_proto_file)
+            #merge into the original scoped_known_messages
+            scoped_known_messages.update(parsed_imported_proto_scoped_known_messages)
 
         if parsed_proto_file.package != '':
-            scopes = list(parsed_proto_file.package.scopes)
-
-        unscoped_known_messages = extract_message_hierarchy(parsed_proto_file)
-        # pack the known_messages within the scopes defined by package
-        scoped_known_messages = unscoped_known_messages
-        for scope in reversed(scopes):
-            scoped_known_messages = {scope: scoped_known_messages}
+            package_scopes = list(parsed_proto_file.package.scopes)
 
         for message in parsed_proto_file.elements:
             known_enums += extract_enum_names(message)
 
         for message in parsed_proto_file.elements:
-            wrapped_messages += boostifier.process_message(message, scoped_known_messages, known_enums, scopes)
+            wrapped_messages += boostifier.process_message(message, scoped_known_messages, known_enums, package_scopes)
 
         output_file = open(output_file, 'w')
 
         proto_header_file = protoc_header_filename(input_basename)
         output_file.write(templates.HEADER % locals())
 
-        for scope in scopes:
+        for scope in package_scopes:
             scope_name = scope
             output_file.write(templates.PACKAGE_SCOPE_DUMMY_CLASS % locals())
 
         module_name = input_basename + '_proto'
         output_file.write(templates.MODULE_DECLARATION % locals())
 
-        for scope in scopes:
+        for scope in package_scopes:
             scope_name = scope
             output_file.write(templates.PACKAGE_SCOPE % locals())
 
